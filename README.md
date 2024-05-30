@@ -11,7 +11,7 @@ This is an enriched elsa client has below functions:
 
 ## Snapshot:
 
-1:Start workflow with input parameters and trigger event
+1:Start workflow with input parameters and trigger event with input parameters
 
 ![](./README.assets/snapshot001.gif)
 
