@@ -1,0 +1,376 @@
+﻿@page
+@model Elsa.ServerAndStudio.Web.Pages.Index001Model
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@inject IConfiguration Configuration;
+@{
+    var baseUrl = $"{Request.Scheme}://{Request.Host}";
+    var apiUrl = baseUrl + Url.Content("~/elsa/api");
+    var basePath = Configuration["Hosting:BasePath"]!;
+
+}
+@inject Elsa.SasTokens.Contracts.ITokenService tokenService;
+@{
+    string eventName = Request.Query["event"];
+    eventName = (string.IsNullOrEmpty(eventName) ? "Event001" : eventName);
+    string id = Request.Query["id"];
+    id = (string.IsNullOrEmpty(id) ? "id001" : id);
+    var payload = new Elsa.Http.Models.EventTokenPayload(eventName, id);
+    string token = tokenService.CreateToken(payload);
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Workflow Client</title>
+    <link rel="icon" href="favicon.png" type="image/x-icon">
+    <link rel="stylesheet" href="~/lib/bootstrap@5.3.3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="~/lib/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="~/css/fxSite.css" rel="stylesheet" type="text/css" />
+    <style>
+        .fxItem {
+            border-radius: 5px;
+            margin: 5px;
+            border: 1px solid gray;
+        }
+
+        .fxTable {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .fxRow {
+            display: table-row;
+        }
+
+        .fxCell {
+            display: table-cell;
+            border: 0px solid #ccc;
+        }
+    </style>
+    <script src="@Url.Content("~/lib/jquery@3.7.1/jquery.min.js")" type="text/javascript"></script>
+    <script src="@Url.Content("~/js/Fx00CMNUtility.js")" type="text/javascript"></script>
+    <script src="@Url.Content("~/js/Fx00WFClientBase.js")" type="text/javascript"></script>
+    <script src="@Url.Content("~/js/Fx03WFClient4All.js")" type="text/javascript"></script>
+    <script src="@Url.Content("~/js/Fx03WFClient4Single.js")" type="text/javascript"></script>
+    <script src="@Url.Content("~/js/Fx10WFDisplayer4Signle001.js")" type="text/javascript"></script>
+    <script src="@Url.Content("~/js/Fx10WF2DBClient001.js")" type="text/javascript"></script>
+    <script>
+        localStorage.setItem("fxWFAccessToken", "");
+        var fx00CMNUtility=new Fx00CMNUtility();
+        var fx03WFClient4All = new Fx03WFClient4All(fx00CMNUtility,`@Url.Content("~/elsa/api")`,`admin`,`password`);
+        var fx03WFClient4Single = new Fx03WFClient4Single(fx00CMNUtility,`@Url.Content("~/elsa/api")`,`admin`,`password`,``,`FCC52E98-D12F-401E-9839-000499A3D3E8`,`管理员`);
+        fx03WFClient4Single.fxCreateJsonObject4Execute = function () {
+            var workflowDefinition = fx03WFClient4Single.workflowDefinition;
+            var jsonObject = {
+                Input: {
+                }
+            };
+            if (workflowDefinition.id === null || workflowDefinition.id===""|| workflowDefinition.id===undefined){
+                return jsonObject;
+            }else{
+                fx03WFClient4Single.workflowDefinition.inputs.forEach((item, index) => {
+                    jsonObject.Input[item.name] = $("#" + item.name).val();
+                });
+                return jsonObject;
+            }
+        }
+        fx03WFClient4Single.fxCreateJsonObject4TriggerEvent = function (eventName, sheetID, eventInput, eventUser, eventMessage, sheetData) {
+            var workflowDefinition = fx03WFClient4Single.workflowDefinition;
+            var jsonObject = {
+                EventName : eventName,
+                WorkflowInstanceId: fx03WFClient4Single.workflowInstanceId,
+                WorkflowExecutionMode : 0,//同步执行，1为异步执行
+                Input: {
+                }
+            };
+            if (workflowDefinition.id === null || workflowDefinition.id === "" || workflowDefinition.id === undefined) {
+                return jsonObject;
+            } else {
+                fx03WFClient4Single.workflowDefinition.inputs.forEach((item, index) => {
+                    jsonObject.Input[item.name] = $("#" + item.name).val();
+                });
+                if (sheetID !== null && sheetID !== undefined && sheetID !== "") jsonObject.Input["FxSheetID"] = sheetID;
+                if (eventInput !== null && eventInput !== undefined && eventInput !== "") jsonObject.Input["FxCurrEventInput"] = eventInput;
+                if (eventUser !== null && eventUser !== undefined && eventUser !== "") jsonObject.Input["FxCurrEventUser"] = eventUser;
+                if (eventMessage !== null && eventMessage !== undefined && eventMessage !== "") jsonObject.Input["FxCurrEventMessage"] = eventMessage;
+                if (sheetData !== null && sheetData !== undefined && sheetData !== "") jsonObject.Input["FxCurrSheetData"] = sheetData;
+                return jsonObject;
+            }
+        };
+        fx03WFClient4Single.fxShowWorkflowInfo = function () {
+            fx03WFClient4Single.fxRefresh(fx03WFClient4Single.sheetId,
+                function tmp() {
+                    fx10WFDisplayer4Single001.fxShowWorkflowDefinition("workflowDefinition", fx03WFClient4Single, "fx03WFClient4Single");
+                },
+                function tmp() {
+                    fx10WFDisplayer4Single001.fxShowWorkflowInstanceJournal("workflowInstanceJournal", fx03WFClient4Single);
+                });
+        }
+        var fx10WF2DBClient001 = new Fx10WF2DBClient001Ext(fx00CMNUtility,`@Url.Content("~/Index001?handler=")`,`@Url.Content("~/elsa/api")`,`admin`,`password`);
+        var fx10WFDisplayer4Single001 = new Fx10WFDisplayer4Signle001(fx00CMNUtility);
+        $(document).ready(function () {
+            $(window).resize(function () { fxResetLayout(); });
+            fxResetLayout();
+            fxLoadWorkflowDefinitions("Latest", 0, 10, "Descending");
+        });
+        function fxResetLayout() {
+            var topH = 40;
+            var bottomH = 35;
+            var wH = $(window).height() - topH - bottomH;
+            $("#workflowDefinitions").height(wH);
+            $("#workflowInstances").height(wH - 100);
+            $("#workflowDefinition").height((wH / 2));
+            $("#workflowInstanceJournal").height((wH / 2) - 38);
+        }
+        function fxVersionOptionsChange(){
+            var versionOption = document.querySelector('input[name="fxVersion"]:checked').value;
+            fxLoadWorkflowDefinitions(versionOption, 0, 10, "Descending");
+        }
+        function fxLoadWorkflowDefinitions(versionOptions,page,pageSize,orderDirection) {
+            fx03WFClient4All.fxLoadWorkflowDefinitions(versionOptions, page, pageSize, orderDirection, function tmp(jsonObject) { fxLoadWorkflowDefinitionsComplete(page, pageSize, jsonObject); });
+        }
+        function fxLoadWorkflowDefinitionsComplete(page,pageSize,jsonObject) {
+            var items = jsonObject.items;
+            const ticks = Date.now();
+            var html = ``;
+            html += `
+            <div class="fxItem">
+                <span data-wf-item="wfd-all" style="color:blue;cursor:pointer;" onclick="fxSelectWorkflowDefinition(this);fxLoadWorkflowInstances('', 'Latest', 0, 10, 'Descending')">All Workflow Instances</span>
+            </div>`;
+            items.forEach((item, index) => {
+                html += `
+                        <div class="fxItem" style="cursor:pointer;">
+                            <span data-wf-item="wfd" onclick="fxSelectWorkflowDefinition(this);fxLoadWorkflowInstances('${item.definitionId}', '${item.version}', 0, 10, 'Descending')">${item.name}:${item.definitionId}</span>
+                            <hr/>
+                            <span style="color:blue;" onclick="fxSaveAs('${item.definitionId}','${item.version}')">SaveAs</span>&nbsp;&nbsp;&nbsp;
+                            <span style="color:blue;" onclick="fx10WF2DBClient001.fxWriteWF2DB('${item.definitionId}','${item.version}')">V${item.version} To DB</a><br/>
+                        </div>
+                        `
+            });
+            html += fxPager4WorkflowDefinitions(page, pageSize, jsonObject.totalCount);
+            $("#workflowDefinitionsList").html(html);
+        }
+        function fxSelectWorkflowDefinition(workflowDefinitionItem){
+            $('span[data-wf-item="wfd"]').css("color", "");
+            $('span[data-wf-item="wfd-all"]').css("color", "blue");
+            $(workflowDefinitionItem).css("color", "red");
+        }
+        function fxPager4WorkflowDefinitions(page, pageSize, totalCount) {
+            var pageCount = Math.ceil(totalCount / pageSize);
+            var pageNumber = page + 1;
+            var prevPage = page - 1;
+            var nextPage = page + 1;
+            if (prevPage < 0) prevPage = 0;
+            if (nextPage >= pageCount) nextPage = pageCount - 1;
+            if (nextPage < 0) nextPage =0;
+            var firstPage=0;
+            var lastPage = pageCount - 1;
+            if (lastPage < 0) lastPage = 0;
+            var versionOption = document.querySelector('input[name="fxVersion"]:checked').value;
+            return `
+            每页${pageSize}条,共${totalCount}条,${pageNumber}/${pageCount}&nbsp;
+            <span style='cursor:pointer;color:blue;font-size:24px;' onclick='fxLoadWorkflowDefinitions("${versionOption}", ${firstPage}, ${pageSize}, "Descending")' >«</span>&nbsp;
+            <span style='cursor:pointer;color:blue;font-size:24px;' onclick='fxLoadWorkflowDefinitions("${versionOption}", ${prevPage}, ${pageSize}, "Descending")'>‹</span>&nbsp;
+            <span style='cursor:pointer;color:blue;font-size:24px;' onclick='fxLoadWorkflowDefinitions("${versionOption}", ${nextPage}, ${pageSize}, "Descending")'>›</span>&nbsp;
+            <span style='cursor:pointer;color:blue;font-size:24px;' onclick='fxLoadWorkflowDefinitions("${versionOption}", ${lastPage}, ${pageSize}, "Descending")'>»</span>&nbsp;
+            `
+        }
+        function fxLoadWorkflowInstances(workflowDefinitionId, versionOptions, page, pageSize, orderDirection) {
+            if(workflowDefinitionId===null||workflowDefinitionId===""||workflowDefinitionId===undefined){
+                $("#workflowInputs").html(``);
+            }else{
+                fx03WFClient4Single.workflowDefinitionId = workflowDefinitionId;
+                fx03WFClient4Single.fxLoadWorkflowDefinitionByDefinitionId(versionOptions, function tmp(jsonObject) { 
+                    fx03WFClient4Single.workflowDefinition = jsonObject;
+                    //display input
+                    var html = ``;
+                    jsonObject.inputs.forEach((item, index) => {
+                        const ticks = Date.now();
+                        var tmpValue = (ticks + index * 10).toString();
+                        switch (item.name.toLowerCase()) {
+                            case "fxcurrsheetid":
+                                tmpValue = "sheetid::" + (ticks + index * 10).toString();
+                                break;
+                            case "fxbaseurl4wfbiz":
+                                tmpValue = "http://localhost:9307";
+                                break;
+                            case "fxcurreventinput":
+                                tmpValue = "100";
+                                break;
+                            case "fxcurreventuser":
+                                tmpValue = "Admin::" + (ticks + index * 10).toString();
+                                break;
+                            case "fxcurreventmessage":
+                                tmpValue = "event message::" + (ticks + index * 10).toString();
+                                break;
+                            case "fxcurrsheetdatajsonstring":
+                                tmpValue =encodeURIComponent(JSON.stringify({ discount: 80 }));
+                                break;
+                            default:
+                                tmpValue = (ticks + index * 10).toString();
+                                break;
+                        }
+                        html += `<div class="fxCell" style="padding:5px;">
+                                    &nbsp;${item.name}(${item.displayName}):<br />
+                                    <input class="form-control" type="text" id="${item.name}" name="${item.name}" value="${tmpValue}" style="width:100%;"></input>
+                                </div>`;
+                    });
+                    html += `<div class="fxCell" style="padding:5px;">
+                                <br />
+                                <button class="btn btn-sm mb-1 btn-primary" onclick="fx03WFClient4Single.fxExecuteWorkflowNew(fx03WFClient4Single.fxCreateJsonObject4Execute(),function tmp(jsonObj) {
+                                    fxLoadWorkflowInstances('${workflowDefinitionId}', '${versionOptions}', ${page}, ${pageSize}, '${orderDirection}');
+                                    fxLoadWorkflowInstanceJournal(jsonObj.workflowState.definitionId,jsonObj.workflowState.definitionVersion,jsonObj.workflowState.id);
+                                });" >Execute</button>
+                             </div>`;
+                    $("#workflowInputs").html(`<div class="fxTable"><div class="fxRow">${html}</div></div>`);
+                });
+            }
+            fx03WFClient4All.fxLoadWorkflowInstances(workflowDefinitionId, versionOptions, page, pageSize, orderDirection, function tmp(jsonObject) { fxLoadWorkflowInstancesComplete(workflowDefinitionId, page, pageSize, jsonObject); });
+        }
+        function fxLoadWorkflowInstancesComplete(workflowDefinitionId, page, pageSize, jsonObject) {
+            var items = jsonObject.items;
+            var html = ``;
+            items.forEach((item, index) => {
+                html += `
+                        <div class="fxItem" style="">
+                            definition id:<span>${item.definitionId}</span><br/>
+                            instance id:<span style="color:blue;cursor:pointer;" onclick="window.open('@(baseUrl)/workflows/instances/${item.id}/view')">${item.id}</span><br/>
+                            status:<span style="color:blue;cursor:pointer;" onclick="fxLoadWorkflowInstanceJournal('${item.definitionId}','${item.version}','${item.id}')">${item.status}&nbsp;${item.subStatus}</span>&nbsp
+                        </div>
+                        `
+            });
+            html += fxPager4WorkflowInstances(workflowDefinitionId, page, pageSize, jsonObject.totalCount);
+            $("#workflowInstances").html(html);
+        }
+        function fxPager4WorkflowInstances(workflowDefinitionId, page, pageSize, totalCount) {
+            var pageCount = Math.ceil(totalCount / pageSize);
+            var pageNumber = page + 1;
+            var prevPage = page - 1;
+            var nextPage = page + 1;
+            if (prevPage < 0) prevPage = 0;
+            if (nextPage >= pageCount) nextPage = pageCount - 1;
+            if (nextPage < 0) nextPage =0;
+            var firstPage=0;
+            var lastPage = pageCount - 1;
+            if (lastPage < 0) lastPage = 0;
+            return `
+            每页${pageSize}条,共${totalCount}条,${pageNumber}/${pageCount}&nbsp;
+            <span style='cursor:pointer;color:blue;font-size:24px;' onclick='fxLoadWorkflowInstances("${workflowDefinitionId}", "Latest", ${firstPage}, ${pageSize}, "Descending")'>«</span>&nbsp;
+            <span style='cursor:pointer;color:blue;font-size:24px;' onclick='fxLoadWorkflowInstances("${workflowDefinitionId}", "Latest", ${prevPage}, ${pageSize}, "Descending")'>‹</span>&nbsp;
+            <span style='cursor:pointer;color:blue;font-size:24px;' onclick='fxLoadWorkflowInstances("${workflowDefinitionId}", "Latest", ${nextPage}, ${pageSize}, "Descending")'>›</span>&nbsp;
+            <span style='cursor:pointer;color:blue;font-size:24px;' onclick='fxLoadWorkflowInstances("${workflowDefinitionId}", "Latest", ${lastPage}, ${pageSize}, "Descending")'>»</span>&nbsp;
+            `
+        }
+        function fxSaveAs(workflowDefinitionId,version) {
+            var newStr = fx03WFClient4All.fxSaveAs(workflowDefinitionId, version);
+            $("#json4Definition").val(newStr);
+        }
+        function fxLoadWorkflowInstanceJournal(workflowDefinitionId,version,workflowInstanceId) {
+            fx03WFClient4Single.workflowDefinitionId = workflowDefinitionId;
+            fx03WFClient4Single.workflowInstanceId = workflowInstanceId;
+            fx03WFClient4Single.fxLoadWorkflowInstance(function tmp(jsonObject) {
+                fx03WFClient4Single.workflowInstance = jsonObject;
+                fx03WFClient4Single.sheetId=jsonObject.workflowState.input.FxSheetID;
+                fx03WFClient4Single.fxShowWorkflowInfo();
+            });
+            //fxWFPorxyClient4All001.fxLoadWorkflowInstanceJournal(workflowInstanceId, function tmp(jsonObject) { fxLoadWorkflowInstanceJournalComplete(workflowDefinitionId, version, workflowInstanceId, jsonObject); });
+        }
+    </script>
+</head>
+<body>
+    <div style="height:40px;text-align:right;background-color:#2D63B1;color:#ffffff;display: flex;align-items: center;justify-content: right;">
+        <span style="cursor:pointer;" onclick="window.open('@Url.Content("/dwx_wfscheme_frm01_w/index?customizedViewName=index")')">Workflow Permission</span>&nbsp;|&nbsp;
+        <span style="cursor:pointer;" onclick="window.open('@Url.Content("~/")')">Workflow Dashboard</span>&nbsp;&nbsp;
+        
+    </div>
+    <table class="fx-table-100">
+        <tr>
+            <td style="width:300px;padding-left:16px;padding-right:8px;vertical-align:top;">
+                <div id="workflowDefinitions" style="background-color:white;border-radius:5px;padding:5px;overflow:auto;">
+                    &nbsp;&nbsp;Version Options:&nbsp;
+                    <input type="radio" name="fxVersion" checked value="Latest" onchange="fxVersionOptionsChange()" />Latest&nbsp;
+                    <input type="radio" name="fxVersion" value="AllVersions" onchange="fxVersionOptionsChange()" />All&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <div id="workflowDefinitionsList">
+
+                    </div>
+                </div>
+            </td>
+            <td style="padding-left:8px;padding-right:8px;vertical-align:top;">
+                <div id="workflowInputs" style="height:100px;background-color:white;padding:5px;overflow:auto;border-bottom:1px solid gray;">
+
+                </div>
+                <div id="workflowInstances" style="background-color:white;border-radius:5px;padding:5px;overflow:auto;">
+                    
+                </div>
+            </td>
+            <td style="width:300px;padding-left:8px;padding-right:16px;vertical-align:top;">
+                <div id="workflowDefinition" style="background-color:white;border-radius:5px;padding:5px;overflow:auto;">
+                    <i class="bi bi-check-circle-fill" style="font-size: 16px; color: #009688;"></i>
+                </div>
+                <div id="workflowInstanceJournal" style="background-color:white;border-radius:5px;padding:5px;overflow:auto;margin-top:16px;">
+                    <div class="fxTable">
+                        <div class="fxRow">
+                            <div class="fxCell fx-verticle-line-2" style="width:30px;border:0px solid red;text-align:center;">
+                                <div>
+                                    <i class="bi bi-clock" style="font-size: 20px;color:#3a89ff;background-color:#ffffff;"></i>
+                                </div>
+                            </div>
+                            <div class="fxCell">
+                                Test Test Test Test<br />
+                                Test Test Test Test<br />
+                                Test Test Test Test<br />
+                                Test Test Test Test<br />
+                            </div>
+                        </div>
+                        <div class="fxRow">
+                            <div class="fxCell fx-verticle-line-2" style="width:30px;border:0px solid red;text-align:center;">
+                                <div>
+                                    <i class="bi bi-clock" style="font-size: 20px;color:#3a89ff;background-color:#ffffff;"></i>
+                                </div>
+                            </div>
+                            <div class="fxCell">
+                                Test Test Test Test<br />
+                                Test Test Test Test<br />
+                                Test Test Test Test<br />
+                                Test Test Test Test<br />
+                            </div>
+                        </div>
+                        <div class="fxRow">
+                            <div class="fxCell fx-verticle-line-2" style="width:30px;border:0px solid red;text-align:center;">
+                                <div>
+                                    <i class="bi bi-clock" style="font-size: 20px;color:#3a89ff;background-color:#ffffff;"></i>
+                                </div>
+                            </div>
+                            <div class="fxCell">
+                                Test Test Test Test<br />
+                                Test Test Test Test<br />
+                                Test Test Test Test<br />
+                                Test Test Test Test<br />
+                            </div>
+                        </div>
+                        <div class="fxRow">
+                            <div class="fxCell fx-verticle-line-2" style="width:30px;border:0px solid red;text-align:center;">
+                                <div>
+                                    <i class="bi bi-clock" style="font-size: 20px;color:#3a89ff;background-color:#ffffff;"></i>
+                                </div>
+                            </div>
+                            <div class="fxCell">
+                                Test Test Test Test<br />
+                                Test Test Test Test<br />
+                                Test Test Test Test<br />
+                                Test Test Test Test<br />
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </td>
+        </tr>
+    </table>
+    <div style="height:35px;">
+        <input type="text" id="json4Definition" value="" style="width:100%" />
+    </div>
+</body>
+</html>
