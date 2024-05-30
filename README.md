@@ -1,5 +1,13 @@
 # FxElsaClient
-An enriched elsa client with event trigger,input parameters and save as supported 
+This is an enriched elsa client has below functions:
+
+1. start workflow with input parameters.
+2. trigger event with input parameters.
+3. save an exist workflow definition as a new workflow definition
+4. write workflow definition node to db
+5. long running and event driven workflow supported
+
+
 
 ## Snapshot:
 
