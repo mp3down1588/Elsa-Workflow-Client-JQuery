@@ -1,5 +1,5 @@
 # FxElsaClient
-This is an enriched elsa client has below functions:
+This is a more feature-rich elsa client with the following features:
 
 1. start workflow with input parameters.
 2. trigger event with input parameters.
