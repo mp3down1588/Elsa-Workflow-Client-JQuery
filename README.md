@@ -15,7 +15,7 @@ This is a more feature-rich elsa client with the following features:
 
 ![](./README.assets/snapshot001.gif)
 
-2:Save current workflow as a new workflow:
+2:Save an exist workflow definition as a new workflow definition:
 
 ![](./README.assets/snapshot002.gif)
 
