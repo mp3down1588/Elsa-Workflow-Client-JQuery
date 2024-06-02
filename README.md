@@ -1,4 +1,4 @@
-# FxElsaClient
+# Elsa Workflow Client for JQuery
 This is a more feature-rich elsa client with the following features:
 
 1. start workflow with input parameters.
