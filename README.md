@@ -1,5 +1,5 @@
 # Elsa Workflow Client for JQuery
-This is a more feature-rich elsa client with the following features:
+This is a more feature-rich elsa workflow client with the following features:
 
 1. start workflow with input parameters.
 2. trigger event with input parameters.
